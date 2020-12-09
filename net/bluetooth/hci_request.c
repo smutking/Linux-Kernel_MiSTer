@@ -130,7 +130,7 @@ struct sk_buff *__hci_cmd_sync_ev(struct hci_dev *hdev, u16 opcode, u32 plen,
 
 	hci_req_init(&req, hdev);
 
-	hci_req_add_ev(&req, opcode, plen, param, event);
+	hci_req_add_ev(&req, opcode, plen, param, event, false);
 
 	hdev->req_status = HCI_REQ_PEND;
 
@@ -305,7 +305,7 @@ struct sk_buff *hci_prepare_cmd(struct hci_dev *hdev, u16 opcode, u32 plen,
 
 /* Queue a command to an asynchronous HCI request */
 void hci_req_add_ev(struct hci_request *req, u16 opcode, u32 plen,
-		    const void *param, u8 event)
+		    const void *param, u8 event, u8 ignore_status)
 {
 	struct hci_dev *hdev = req->hdev;
 	struct sk_buff *skb;
@@ -330,6 +330,7 @@ void hci_req_add_ev(struct hci_request *req, u16 opcode, u32 plen,
 		bt_cb(skb)->hci.req_flags |= HCI_REQ_START;
 
 	bt_cb(skb)->hci.req_event = event;
+	bt_cb(skb)->hci.ignore_status = ignore_status;
 
 	skb_queue_tail(&req->cmd_q, skb);
 }
@@ -337,7 +338,7 @@ void hci_req_add_ev(struct hci_request *req, u16 opcode, u32 plen,
 void hci_req_add(struct hci_request *req, u16 opcode, u32 plen,
 		 const void *param)
 {
-	hci_req_add_ev(req, opcode, plen, param, 0);
+	hci_req_add_ev(req, opcode, plen, param, 0, false);
 }
 
 void __hci_req_write_fast_connectable(struct hci_request *req, bool enable)

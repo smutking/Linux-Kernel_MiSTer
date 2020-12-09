@@ -808,8 +808,8 @@ static int hci_init4_req(struct hci_request *req, unsigned long opt)
 
 		bacpy(&cp.bdaddr, BDADDR_ANY);
 		cp.delete_all = 0x01;
-		hci_req_add(req, HCI_OP_DELETE_STORED_LINK_KEY,
-			    sizeof(cp), &cp);
+		hci_req_add_ev(req, HCI_OP_DELETE_STORED_LINK_KEY,
+			    sizeof(cp), &cp, 0, true);
 	}
 
 	/* Set event mask page 2 if the HCI command for it is supported */
@@ -4272,7 +4272,11 @@ void hci_req_cmd_complete(struct hci_dev *hdev, u16 opcode, u8 status,
 		return;
 	}
 
-	/* If the command succeeded and there's still more commands in
+	/* Check for commands whose failures aren't critical */
+	if (bt_cb(hdev->sent_cmd)->hci.ignore_status)
+		status = 0;
+
+ 	/* If the command succeeded and there's still more commands in
 	 * this request the request is not yet complete.
 	 */
 	if (!status && !hci_req_is_complete(hdev))
